@@ -197,13 +197,22 @@ function updatePlayer (sprite: Sprite) {
         if (sprite.vy > 5) {
             sprite.startEffect(effects.blizzard, 300)
         }
-        if (sprite.vy > 0) {
+        if (sprite.vy > 1) {
             bounce(sprite, -0.3)
         } else {
             sprite.y += -1
         }
     }
 }
+function updateSpeedMeter () {
+    speed_meter.setText("" + Math.round(speed * 10) + " km/h")
+}
+controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
+    speed += -0.2
+})
+controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    speed += 0.1
+})
 function limitSpeed () {
     speed = Math.constrain(speed, 0, 3)
 }
@@ -211,28 +220,29 @@ function bounce (sprite: Sprite, ratio: number) {
     sprite.vy = sprite.vy * ratio
 }
 function isOnGround (sprite: Sprite) {
-    return sprite.overlapsWith(ground) || sprite.overlapsWith(groundNext)
+    return sprite.overlapsWith(ground) || sprite.overlapsWith(ground_next)
 }
 controller.B.onEvent(ControllerButtonEvent.Repeated, function () {
-    speed += -0.5
+    speed += -0.2
 })
 function moveGround () {
     ground.left += -1 * speed
     ground.top += -0.375 * speed
-    groundNext.left += -1 * speed
-    groundNext.top += -0.375 * speed
+    ground_next.left += -1 * speed
+    ground_next.top += -0.375 * speed
     if (ground.left <= 0 - scene.screenWidth()) {
         ground.destroy()
-        ground = groundNext
-        groundNext = addGroundAt(ground.right, 90)
+        ground = ground_next
+        ground_next = addGroundAt(ground.right, 90)
     }
 }
 controller.A.onEvent(ControllerButtonEvent.Repeated, function () {
     speed += 0.1
 })
 let _ground: Sprite = null
+let speed_meter: TextSprite = null
 let speed = 0
-let groundNext: Sprite = null
+let ground_next: Sprite = null
 let ground: Sprite = null
 let santa = sprites.create(img`
     . . . . 2 2 . . . . . . . . . . 
@@ -258,11 +268,14 @@ santa.vy = 50
 santa.ay = 30
 scene.setBackgroundColor(9)
 ground = addGroundAt(0, 30)
-groundNext = addGroundAt(scene.screenWidth(), 90)
+ground_next = addGroundAt(scene.screenWidth(), 90)
 speed = 3
+speed_meter = textsprite.create("")
+speed_meter.left = 60
+speed_meter.top = 2
 game.onUpdate(function () {
     limitSpeed()
     moveGround()
     updatePlayer(santa)
-    info.setScore(speed)
+    updateSpeedMeter()
 })
