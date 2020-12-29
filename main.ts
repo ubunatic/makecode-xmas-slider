@@ -1,6 +1,12 @@
 namespace SpriteKind {
     export const Ground = SpriteKind.create()
     export const Tree = SpriteKind.create()
+    export const Present = SpriteKind.create()
+}
+function checkScore () {
+    if (score >= 100) {
+        game.over(true)
+    }
 }
 function updateJump (sprite: Sprite, jumping: boolean) {
     if (_jump > 0 && jumping) {
@@ -63,30 +69,6 @@ function limitSpeed () {
 controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
     speed += 0.1
 })
-function addTreeOn (sprite: Sprite) {
-    _obj = sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . 7 . . . . . . . . 
-        . . . . . . 7 6 7 . . . . . . . 
-        . . . . . . 6 7 6 . . . . . . . 
-        . . . . . 7 7 6 7 7 . . . . . . 
-        . . . . . 7 6 7 6 6 . . . . . . 
-        . . . . . 7 6 7 7 7 7 . . . . . 
-        . . . . 7 6 7 7 6 6 7 . . . . . 
-        . . . . 6 7 7 6 7 7 6 . . . . . 
-        . . . . 7 6 6 7 6 7 7 7 . . . . 
-        . . . 6 6 7 7 6 6 6 6 7 7 . . . 
-        . . . . . . . 6 . . . . . . . . 
-        . . . . . . . e . . . . . . . . 
-        . . . . . . . e . . . . . . . . 
-        . . . . . . . d . . . . . . . . 
-        . . . . . . . 1 . . . . . . . . 
-        `, SpriteKind.Tree)
-    _obj.setPosition(randint(ground_next.left, ground_next.left + scene.screenWidth()), ground_next.bottom)
-    putOnGround(_obj)
-    _obj.y += 2
-    obstacles.push(_obj)
-}
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     speed += -0.2
 })
@@ -998,15 +980,31 @@ function generateGrounds () {
         ................................................................................................................................................................
         `]
 }
+function changeScoreBy (num: number) {
+    score += num
+    score = Math.max(0, score)
+    score_meter.setText("" + score)
+    score_meter.top = 2
+    score_meter.left = 2
+    score_meter.setIcon(img`
+        . . . . . . . 
+        . . . . . . . 
+        . . 5 . 5 . . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . . . . . . . 
+        . . . . . . . 
+        . . . . . . . 
+        `)
+}
 function bounce (sprite: Sprite, ratio: number) {
     sprite.vy = sprite.vy * ratio
 }
 function isOnGround (sprite: Sprite) {
     return sprite.overlapsWith(ground) || sprite.overlapsWith(ground_next)
 }
-sprites.onOverlap(SpriteKind.Tree, SpriteKind.Ground, function (sprite, otherSprite) {
-    sprite.setVelocity(0, 0)
-})
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
     speed += 0.1
 })
@@ -1027,6 +1025,12 @@ function slideOnGround (sprite: Sprite) {
     putOnGround(sprite)
     sprite.vy = ground_pressure
 }
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Present, function (sprite, otherSprite) {
+    changeScoreBy(1)
+    otherSprite.destroy()
+    music.playTone(415, music.beat(BeatFraction.Eighth))
+    music.playTone(554, music.beat(BeatFraction.Quarter))
+})
 function moveGround () {
     move(ground)
     move(ground_next)
@@ -1051,21 +1055,86 @@ function jump (sprite: Sprite) {
         music.jumpUp.play()
     }
 }
+sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Ground, function (sprite, otherSprite) {
+    sprite.destroy(effects.disintegrate, 100)
+})
 function putOnGround (sprite: Sprite) {
     while (isOnGround(sprite)) {
         sprite.y += -1
     }
 }
+function crashSound () {
+    music.playTone(131, music.beat(BeatFraction.Sixteenth))
+    music.rest(music.beat(BeatFraction.Sixteenth))
+    music.playTone(165, music.beat(BeatFraction.Sixteenth))
+    music.rest(music.beat(BeatFraction.Sixteenth))
+    music.playTone(131, music.beat(BeatFraction.Sixteenth))
+}
 function move (sprite: Sprite) {
     sprite.left += -1 * speed
     sprite.top += -0.375 * speed
 }
+function addObstacleOn (sprite: Sprite, ground: Sprite) {
+    sprite.setPosition(randint(ground.left, ground.left + scene.screenWidth()), ground.bottom)
+    putOnGround(sprite)
+    sprite.y += 2
+    obstacles.push(sprite)
+}
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Tree, function (sprite, otherSprite) {
     otherSprite.destroy(effects.disintegrate, 500)
-    music.playTone(196, music.beat(BeatFraction.Sixteenth))
+    crashSound()
+    changeScoreBy(-3)
+    projectile = sprites.createProjectileFromSprite(img`
+        . . . . . . . 
+        . . . . . . . 
+        . . 5 . 5 . . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . . . . . . . 
+        . . . . . . . 
+        . . . . . . . 
+        `, sprite, -50, 0)
+    projectile.setFlag(SpriteFlag.AutoDestroy, true)
 })
 function addObstacles () {
-    addTreeOn(ground_next)
+    addObstacleOn(sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . 7 . . . . . . . . 
+        . . . . . . 7 6 7 . . . . . . . 
+        . . . . . . 6 7 6 . . . . . . . 
+        . . . . . 7 7 6 7 7 . . . . . . 
+        . . . . . 7 6 7 6 6 . . . . . . 
+        . . . . . 7 6 7 7 7 7 . . . . . 
+        . . . . 7 6 7 7 6 6 7 . . . . . 
+        . . . . 6 7 7 6 7 7 6 . . . . . 
+        . . . . 7 6 6 7 6 7 7 7 . . . . 
+        . . . 6 6 7 7 6 6 6 6 7 7 . . . 
+        . . . . . . . 6 . . . . . . . . 
+        . . . . . . . e . . . . . . . . 
+        . . . . . . . e . . . . . . . . 
+        . . . . . . . d . . . . . . . . 
+        . . . . . . . 1 . . . . . . . . 
+        `, SpriteKind.Tree), ground_next)
+    addObstacleOn(sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . 5 . . . 5 . . . . . 
+        . . . . . 5 . 5 . 5 . 4 . . . . 
+        . . . . . . 5 4 5 5 4 . . . . . 
+        . . . . . 2 2 2 4 2 2 c . . . . 
+        . . . . . 2 2 2 4 2 2 c . . . . 
+        . . . . . 2 2 2 4 2 2 c . . . . 
+        . . . . . 2 2 2 4 2 2 c . . . . 
+        . . . . . c c c 4 c c c . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Present), ground_next)
     if (obstacles.length > 10) {
         obstacles.shift().destroy()
     }
@@ -1073,7 +1142,7 @@ function addObstacles () {
 controller.left.onEvent(ControllerButtonEvent.Repeated, function () {
     speed += -0.2
 })
-let _obj: Sprite = null
+let projectile: Sprite = null
 let _ground: Sprite = null
 let _jump = 0
 let _debug = false
@@ -1082,8 +1151,10 @@ let ground_pressure = 0
 let _y_prev = 0
 let _slope_time = 0
 let _ground_time = 0
+let score = 0
 let obstacles: Sprite[] = []
 let _debug_text: TextSprite = null
+let score_meter: TextSprite = null
 let speed_meter: TextSprite = null
 let speed = 0
 let ground_next: Sprite = null
@@ -1121,6 +1192,7 @@ ground = addGroundAt(0, 30)
 ground_next = addGroundAt(scene.screenWidth(), 90)
 speed = 2
 speed_meter = textsprite.create("")
+score_meter = textsprite.create("", 0, 6)
 _debug_text = textsprite.create("", 1, 2)
 speed_meter.left = 60
 speed_meter.top = 2
@@ -1128,15 +1200,18 @@ _debug_text.bottom = scene.screenHeight()
 _debug_text.left = 2
 _debug_text.z = 1
 obstacles = []
+score = 0
 _ground_time = 0
 _slope_time = 0
 _y_prev = 0
 ground_pressure = 0
 ground_lag = 10
 _debug = false
+changeScoreBy(0)
 game.onUpdate(function () {
     limitSpeed()
     moveGround()
     updatePlayer(santa)
     updateSpeedMeter()
+    checkScore()
 })
