@@ -58,6 +58,30 @@ function limitSpeed () {
 controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
     speed += 0.1
 })
+function addTreeOn (sprite: Sprite) {
+    _obj = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . 7 . . . . . . . . 
+        . . . . . . 7 6 7 . . . . . . . 
+        . . . . . . 6 7 6 . . . . . . . 
+        . . . . . 7 7 6 7 7 . . . . . . 
+        . . . . . 7 6 7 6 6 . . . . . . 
+        . . . . . 7 6 7 7 7 7 . . . . . 
+        . . . . 7 6 7 7 6 6 7 . . . . . 
+        . . . . 6 7 7 6 7 7 6 . . . . . 
+        . . . . 7 6 6 7 6 7 7 7 . . . . 
+        . . . 6 6 7 7 6 6 6 6 7 7 . . . 
+        . . . . . . . 6 . . . . . . . . 
+        . . . . . . . e . . . . . . . . 
+        . . . . . . . e . . . . . . . . 
+        . . . . . . . d . . . . . . . . 
+        . . . . . . . 1 . . . . . . . . 
+        `, SpriteKind.Tree)
+    _obj.setPosition(randint(ground_next.left, ground_next.left + scene.screenWidth()), ground_next.bottom)
+    putOnGround(_obj)
+    _obj.y += 2
+    obstacles.push(_obj)
+}
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     speed += -0.2
 })
@@ -98,30 +122,8 @@ function jump (sprite: Sprite) {
         sprite.vy = -100
         sprite.startEffect(effects.blizzard, 500)
         _jump = 2
+        music.jumpUp.play()
     }
-}
-function addTree () {
-    _obj = sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . 7 . . . . . . . . 
-        . . . . . . 7 6 7 . . . . . . . 
-        . . . . . . 6 7 6 . . . . . . . 
-        . . . . . 7 7 6 7 7 . . . . . . 
-        . . . . . 7 6 7 6 6 . . . . . . 
-        . . . . . 7 6 7 7 7 7 . . . . . 
-        . . . . 7 6 7 7 6 6 7 . . . . . 
-        . . . . 6 7 7 6 7 7 6 . . . . . 
-        . . . . 7 6 6 7 6 7 7 7 . . . . 
-        . . . 6 6 7 7 6 6 6 6 7 7 . . . 
-        . . . . . . . 6 . . . . . . . . 
-        . . . . . . . e . . . . . . . . 
-        . . . . . . . e . . . . . . . . 
-        . . . . . . . d . . . . . . . . 
-        . . . . . . . 1 . . . . . . . . 
-        `, SpriteKind.Tree)
-    _obj.setPosition(randint(ground_next.left, ground_next.left + scene.screenWidth()), ground_next.top)
-    _obj.vy = 300 / speed
-    obstacles.push(_obj)
 }
 function putOnGround (sprite: Sprite) {
     while (isOnGround(sprite)) {
@@ -132,8 +134,12 @@ function move (sprite: Sprite) {
     sprite.left += -1 * speed
     sprite.top += -0.375 * speed
 }
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Tree, function (sprite, otherSprite) {
+    otherSprite.destroy(effects.disintegrate, 500)
+    music.playTone(196, music.beat(BeatFraction.Half))
+})
 function addObstacles () {
-    addTree()
+    addTreeOn(ground_next)
     if (obstacles.length > 10) {
         obstacles.shift().destroy()
     }
