@@ -1097,6 +1097,32 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Tree, function (sprite, otherSpr
         . . . . . . . 
         `, sprite, -50, 0)
     projectile.setFlag(SpriteFlag.AutoDestroy, true)
+    projectile = sprites.createProjectileFromSprite(img`
+        . . . . . . . 
+        . . . . . . . 
+        . . 5 . 5 . . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . . . . . . . 
+        . . . . . . . 
+        . . . . . . . 
+        `, sprite, -40, 10)
+    projectile.setFlag(SpriteFlag.AutoDestroy, true)
+    projectile = sprites.createProjectileFromSprite(img`
+        . . . . . . . 
+        . . . . . . . 
+        . . 5 . 5 . . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . 4 4 5 4 4 . 
+        . . . . . . . 
+        . . . . . . . 
+        . . . . . . . 
+        `, sprite, -45, -10)
+    projectile.setFlag(SpriteFlag.AutoDestroy, true)
 })
 function addObstacles () {
     addObstacleOn(sprites.create(img`
