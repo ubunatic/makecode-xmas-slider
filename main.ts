@@ -1010,7 +1010,9 @@ controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 function debug () {
     if (_debug) {
-        _debug_text.setText("gt=" + _ground_time + " vy=" + Math.round(santa.vy) + " obs=" + obstacles.length + " st=" + Math.round(_slope_time))
+        _fps = 1000 / (game.runtime() - _frame_time)
+        _frame_time = game.runtime()
+        _debug_text.setText("g=" + _ground_time + " v=" + Math.round(santa.vy) + " o=" + obstacles.length + " s=" + Math.round(_slope_time) + "fps=" + Math.round(_fps))
         if (_ground_time == 0) {
             scene.setBackgroundColor(6)
         } else {
@@ -1048,7 +1050,7 @@ function jump (sprite: Sprite) {
     if (_jump == 0) {
         putOnGround(sprite)
         sprite.ay = 0
-        sprite.vy = -100 - _slope_time * 0.25
+        sprite.vy = -100 - _slope_time * 0
         sprite.startEffect(effects.blizzard, 500)
         _jump = 2
         _ground_time = 0
@@ -1161,7 +1163,25 @@ function addObstacles () {
         . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
         `, SpriteKind.Present), ground_next)
-    if (obstacles.length > 10) {
+    addObstacleOn(sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . 5 . . . 5 . . . . . 
+        . . . . . 5 . 5 . 5 . 4 . . . . 
+        . . . . . . 5 4 5 5 4 . . . . . 
+        . . . . . 2 2 2 4 2 2 c . . . . 
+        . . . . . 2 2 2 4 2 2 c . . . . 
+        . . . . . 2 2 2 4 2 2 c . . . . 
+        . . . . . 2 2 2 4 2 2 c . . . . 
+        . . . . . c c c 4 c c c . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Present), ground_next)
+    while (obstacles.length > 20) {
         obstacles.shift().destroy()
     }
 }
@@ -1169,9 +1189,11 @@ controller.left.onEvent(ControllerButtonEvent.Repeated, function () {
     speed += -0.2
 })
 let projectile: Sprite = null
+let _fps = 0
 let _ground: Sprite = null
 let _jump = 0
 let _debug = false
+let _frame_time = 0
 let ground_lag = 0
 let ground_pressure = 0
 let _y_prev = 0
@@ -1232,6 +1254,7 @@ _slope_time = 0
 _y_prev = 0
 ground_pressure = 0
 ground_lag = 10
+_frame_time = game.runtime()
 _debug = false
 changeScoreBy(0)
 game.onUpdate(function () {
