@@ -8,7 +8,29 @@ function checkScore () {
         game.over(true)
     }
 }
-function updateJump (sprite: Sprite, jumping: boolean) {
+function addGroundAt (x: number, y: number) {
+    _ground = sprites.create(grounds[randint(0, 4)], SpriteKind.Ground)
+    _ground.left = x
+    _ground.top = y
+    _ground.image.fillRect(0, 60, 160, 120, 1)
+    return _ground
+}
+function updatePlayer (sprite: Sprite) {
+    if (sprite.x > 40) {
+        sprite.vx = 0
+    }
+    longJump(sprite, controller.A.isPressed())
+    if (isOnGround(sprite)) {
+        slideOnGround(sprite)
+        _ground_time = ground_lag
+        jump(santa, controller.A.isPressed())
+    } else {
+        _ground_time = Math.max(0, _ground_time - 1)
+    }
+    longSlide(sprite)
+    debug()
+}
+function longJump (sprite: Sprite, jumping: boolean) {
     if (_jump > 0 && jumping) {
         _jump += 1
         sprite.vy = sprite.vy * 0.97
@@ -25,43 +47,11 @@ function updateJump (sprite: Sprite, jumping: boolean) {
         sprite.ay = gravity
     }
 }
-function addGroundAt (x: number, y: number) {
-    _ground = sprites.create(grounds[randint(0, 4)], SpriteKind.Ground)
-    _ground.left = x
-    _ground.top = y
-    _ground.image.fillRect(0, 60, 160, 120, 1)
-    return _ground
-}
-function updatePlayer (sprite: Sprite) {
-    if (sprite.x > 40) {
-        sprite.vx = 0
-    }
-    updateJump(sprite, controller.A.isPressed())
-    if (isOnGround(sprite)) {
-        slideOnGround(sprite)
-        _ground_time = ground_lag
-        if (controller.A.isPressed()) {
-            jump(santa)
-            _ground_time = 0
-        }
-    } else {
-        _ground_time = Math.max(0, _ground_time - 1)
-    }
-    if (_y_prev - sprite.y > 1) {
-        _slope_time = _slope_time * 0.5
-    } else {
-        _slope_time += 1
-    }
-    _y_prev = sprite.y
-    debug()
-}
 function updateSpeedMeter () {
     speed_meter.setText("" + Math.round(speed * 10 + Math.max(0, 0.1 * santa.vy)) + " km/h")
 }
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (isOnGround(santa) || _ground_time > 0) {
-        jump(santa)
-    }
+    jump(santa, isOnGround(santa) || _ground_time > 0)
 })
 function limitSpeed () {
     speed = Math.constrain(speed, 0, 5)
@@ -989,11 +979,11 @@ function changeScoreBy (num: number) {
     score_meter.setIcon(img`
         . . . . . . . 
         . . . . . . . 
-        . . 5 . 5 . . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
+        . . 1 . 1 . . 
+        . 4 4 1 4 4 . 
+        . 4 4 1 4 4 . 
+        . 4 4 1 4 4 . 
+        . 4 4 1 4 4 . 
         . . . . . . . 
         . . . . . . . 
         . . . . . . . 
@@ -1002,8 +992,114 @@ function changeScoreBy (num: number) {
 function bounce (sprite: Sprite, ratio: number) {
     sprite.vy = sprite.vy * ratio
 }
+function longSlide (sprite: Sprite) {
+    if (_y_prev - sprite.y > 1) {
+        _slope_time = _slope_time * 0.5
+    } else {
+        _slope_time += 1
+    }
+    _y_prev = sprite.y
+}
 function isOnGround (sprite: Sprite) {
     return sprite.overlapsWith(ground) || sprite.overlapsWith(ground_next)
+}
+function newPresent (num: number) {
+    if (num == 0) {
+        return sprites.create(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . 5 . 5 . . . . . . . 
+            . . . . . 5 . 5 . 5 . . . . . . 
+            . . . . . . 5 5 5 . . . . . . . 
+            . . . . . c c 5 c c . . . . . . 
+            . . . . . a a 5 a a . . . . . . 
+            . . . . . a a 5 a a . . . . . . 
+            . . . . . a a 5 a a . . . . . . 
+            . . . . . a a 5 a a . . . . . . 
+            . . . . . a a 5 a a . . . . . . 
+            . . . . . a a 5 a a . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            `, SpriteKind.Present)
+    } else if (num == 1) {
+        return sprites.create(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . 1 . 1 . . . . . . . 
+            . . . . . 1 . 1 . 1 . . . . . . 
+            . . . . . . 1 1 1 . . . . . . . 
+            . . . . 2 2 2 1 2 2 2 . . . . . 
+            . . . . e e e 1 e e e . . . . . 
+            . . . . 2 2 2 1 2 2 2 . . . . . 
+            . . . . 2 2 2 1 2 2 2 . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            `, SpriteKind.Present)
+    } else if (num == 2) {
+        return sprites.create(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . 2 . 2 . . . . . . . 
+            . . . . . 2 . 2 . 2 . . . . . . 
+            . . . . . . 2 2 2 . . . . . . . 
+            . . . . 5 5 5 2 5 5 5 . . . . . 
+            . . . . 4 4 4 2 4 4 4 . . . . . 
+            . . . . 5 5 5 2 5 5 5 . . . . . 
+            . . . . 5 5 5 2 5 5 5 . . . . . 
+            . . . . 5 5 5 2 5 5 5 . . . . . 
+            . . . . 5 5 5 2 5 5 5 . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            `, SpriteKind.Present)
+    } else if (num == 10) {
+        return sprites.create(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . 1 . . . . 1 . . . . . 
+            . . . . 1 . d . . 1 . d . . . . 
+            . . . . d . . 1 1 . . d . . . . 
+            . . . . . d d 1 d d d . . . . . 
+            . . 2 2 2 2 2 1 d 2 2 2 2 2 . . 
+            . . 2 2 2 2 2 1 d 2 2 2 2 2 . . 
+            . . e e e e e 1 d e e e e e . . 
+            . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+            . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+            . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+            . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+            . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+            . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+            . . . . . . . . . . . . . . . . 
+            `, SpriteKind.Present)
+    } else {
+        return sprites.create(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . 2 2 2 2 2 2 2 2 2 2 2 2 . 
+            . . . e e e e e e e e e e e e . 
+            . . . 2 2 2 2 2 2 2 2 2 2 2 2 . 
+            . . . 2 1 1 2 1 1 2 2 1 1 2 2 . 
+            . . . 2 1 2 2 1 2 1 2 1 2 1 2 . 
+            . . . 2 1 1 2 1 1 2 2 1 1 2 2 . 
+            . . . 2 1 2 2 1 2 1 2 1 2 1 2 . 
+            . . . 2 1 1 2 1 2 1 2 1 2 1 2 . 
+            . . . 2 2 2 2 2 2 2 2 2 2 2 2 . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            `, SpriteKind.Present)
+    }
 }
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
     speed += 0.1
@@ -1027,8 +1123,35 @@ function slideOnGround (sprite: Sprite) {
     putOnGround(sprite)
     sprite.vy = ground_pressure
 }
+function randomObstacle () {
+    return newObstacle(randint(0, 2))
+}
+function randomPresent () {
+    return newPresent(randint(0, 2))
+}
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Present, function (sprite, otherSprite) {
-    changeScoreBy(1)
+    if (otherSprite.image.equals(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . 1 . . . . 1 . . . . . 
+        . . . . 1 . d . . 1 . d . . . . 
+        . . . . d . . 1 1 . . d . . . . 
+        . . . . . d d 1 d d d . . . . . 
+        . . 2 2 2 2 2 1 d 2 2 2 2 2 . . 
+        . . 2 2 2 2 2 1 d 2 2 2 2 2 . . 
+        . . e e e e e 1 d e e e e e . . 
+        . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+        . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+        . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+        . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+        . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+        . . 4 2 2 2 2 1 d 2 2 2 2 4 . . 
+        . . . . . . . . . . . . . . . . 
+        `)) {
+        changeScoreBy(3)
+    } else {
+        changeScoreBy(1)
+    }
     otherSprite.destroy()
     music.playTone(415, music.beat(BeatFraction.Eighth))
     music.playTone(554, music.beat(BeatFraction.Quarter))
@@ -1046,8 +1169,8 @@ function moveGround () {
         move(value)
     }
 }
-function jump (sprite: Sprite) {
-    if (_jump == 0) {
+function jump (sprite: Sprite, jumping: boolean) {
+    if (_jump == 0 && jumping) {
         putOnGround(sprite)
         sprite.ay = 0
         sprite.vy = -100 - _slope_time * 0
@@ -1055,6 +1178,26 @@ function jump (sprite: Sprite) {
         _jump = 2
         _ground_time = 0
         music.jumpUp.play()
+    }
+}
+sprites.onOverlap(SpriteKind.Tree, SpriteKind.Present, function (sprite, otherSprite) {
+    otherSprite.destroy()
+})
+function dropPresentsFrom (sprite: Sprite, num: number) {
+    for (let index = 0; index < num; index++) {
+        projectile = sprites.createProjectileFromSprite(img`
+            . . . . . . . 
+            . . . . . . . 
+            . . 1 . 1 . . 
+            . 4 4 1 4 4 . 
+            . 4 4 1 4 4 . 
+            . 4 4 1 4 4 . 
+            . 4 4 1 4 4 . 
+            . . . . . . . 
+            . . . . . . . 
+            . . . . . . . 
+            `, sprite, randint(-30, -50), randint(10, -10))
+        projectile.setFlag(SpriteFlag.AutoDestroy, true)
     }
 }
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Ground, function (sprite, otherSprite) {
@@ -1078,109 +1221,106 @@ function move (sprite: Sprite) {
 }
 function addObstacleOn (sprite: Sprite, ground: Sprite) {
     sprite.setPosition(randint(ground.left, ground.left + scene.screenWidth()), ground.bottom)
+    while (Math.abs(sprite.x - _last_obstacle_x) < 10) {
+        sprite.x += 5
+    }
+    _last_obstacle_x = sprite.x
     putOnGround(sprite)
     sprite.y += 2
     obstacles.push(sprite)
 }
+function newObstacle (num: number) {
+    if (num == 0) {
+        return sprites.create(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . 7 . . . . . . . . 
+            . . . . . . 7 6 7 . . . . . . . 
+            . . . . . . 6 7 6 . . . . . . . 
+            . . . . . 7 7 6 7 7 . . . . . . 
+            . . . . . 7 6 7 6 6 . . . . . . 
+            . . . . . 7 6 7 7 7 7 . . . . . 
+            . . . . 7 6 7 7 6 6 7 . . . . . 
+            . . . . 6 7 7 6 7 7 6 . . . . . 
+            . . . . 7 6 6 7 6 7 7 7 . . . . 
+            . . . 6 6 7 7 6 6 6 6 7 7 . . . 
+            . . . . . . . 6 . . . . . . . . 
+            . . . . . . . e . . . . . . . . 
+            . . . . . . . e . . . . . . . . 
+            . . . . . . . d . . . . . . . . 
+            . . . . . . . 1 . . . . . . . . 
+            `, SpriteKind.Tree)
+    } else if (num == 1) {
+        return sprites.create(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . 1 . . . 1 . . . . . . . . 
+            . . . e 1 . . e . 1 . . . . . . 
+            . . . . e 1 . e 1 e . 1 . . . . 
+            . . . 1 e e . . e . 1 e . . . . 
+            . . . e . . e . e . e . . . . . 
+            . . . . . . e e e e . . . . . . 
+            . . . . . . . e . . . . . . . . 
+            . . . . . . . e . . . . . . . . 
+            . . . . . . . d . . . . . . . . 
+            . . . . . . . 1 . . . . . . . . 
+            `, SpriteKind.Tree)
+    } else if (num == 2) {
+        return sprites.create(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . d d . . . . . . 
+            . . . . . . . d d b b . . . . . 
+            . . . . . . d d b b b . . . . . 
+            . . . . . . b b b b c . . . . . 
+            . . . . . . 1 c c c 1 . . . . . 
+            . . . . . . . 1 1 1 . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            `, SpriteKind.Tree)
+    } else {
+        return sprites.create(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . 2 2 2 2 2 2 2 2 2 2 2 2 . 
+            . . . e e e e e e e e e e e e . 
+            . . . 2 2 2 2 2 2 2 2 2 2 2 2 . 
+            . . . 2 1 1 2 1 1 2 2 1 1 2 2 . 
+            . . . 2 1 2 2 1 2 1 2 1 2 1 2 . 
+            . . . 2 1 1 2 1 1 2 2 1 1 2 2 . 
+            . . . 2 1 2 2 1 2 1 2 1 2 1 2 . 
+            . . . 2 1 1 2 1 2 1 2 1 2 1 2 . 
+            . . . 2 2 2 2 2 2 2 2 2 2 2 2 . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            `, SpriteKind.Tree)
+    }
+}
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Tree, function (sprite, otherSprite) {
     otherSprite.destroy(effects.disintegrate, 500)
     crashSound()
+    dropPresentsFrom(sprite, Math.constrain(score, 0, 3))
     changeScoreBy(-3)
-    projectile = sprites.createProjectileFromSprite(img`
-        . . . . . . . 
-        . . . . . . . 
-        . . 5 . 5 . . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . . . . . . . 
-        . . . . . . . 
-        . . . . . . . 
-        `, sprite, -50, 0)
-    projectile.setFlag(SpriteFlag.AutoDestroy, true)
-    projectile = sprites.createProjectileFromSprite(img`
-        . . . . . . . 
-        . . . . . . . 
-        . . 5 . 5 . . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . . . . . . . 
-        . . . . . . . 
-        . . . . . . . 
-        `, sprite, -40, 10)
-    projectile.setFlag(SpriteFlag.AutoDestroy, true)
-    projectile = sprites.createProjectileFromSprite(img`
-        . . . . . . . 
-        . . . . . . . 
-        . . 5 . 5 . . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . 4 4 5 4 4 . 
-        . . . . . . . 
-        . . . . . . . 
-        . . . . . . . 
-        `, sprite, -45, -10)
-    projectile.setFlag(SpriteFlag.AutoDestroy, true)
 })
 function addObstacles () {
-    addObstacleOn(sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . 7 . . . . . . . . 
-        . . . . . . 7 6 7 . . . . . . . 
-        . . . . . . 6 7 6 . . . . . . . 
-        . . . . . 7 7 6 7 7 . . . . . . 
-        . . . . . 7 6 7 6 6 . . . . . . 
-        . . . . . 7 6 7 7 7 7 . . . . . 
-        . . . . 7 6 7 7 6 6 7 . . . . . 
-        . . . . 6 7 7 6 7 7 6 . . . . . 
-        . . . . 7 6 6 7 6 7 7 7 . . . . 
-        . . . 6 6 7 7 6 6 6 6 7 7 . . . 
-        . . . . . . . 6 . . . . . . . . 
-        . . . . . . . e . . . . . . . . 
-        . . . . . . . e . . . . . . . . 
-        . . . . . . . d . . . . . . . . 
-        . . . . . . . 1 . . . . . . . . 
-        `, SpriteKind.Tree), ground_next)
-    addObstacleOn(sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . 5 . . . 5 . . . . . 
-        . . . . . 5 . 5 . 5 . 4 . . . . 
-        . . . . . . 5 4 5 5 4 . . . . . 
-        . . . . . 2 2 2 4 2 2 c . . . . 
-        . . . . . 2 2 2 4 2 2 c . . . . 
-        . . . . . 2 2 2 4 2 2 c . . . . 
-        . . . . . 2 2 2 4 2 2 c . . . . 
-        . . . . . c c c 4 c c c . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.Present), ground_next)
-    addObstacleOn(sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . 5 . . . 5 . . . . . 
-        . . . . . 5 . 5 . 5 . 4 . . . . 
-        . . . . . . 5 4 5 5 4 . . . . . 
-        . . . . . 2 2 2 4 2 2 c . . . . 
-        . . . . . 2 2 2 4 2 2 c . . . . 
-        . . . . . 2 2 2 4 2 2 c . . . . 
-        . . . . . 2 2 2 4 2 2 c . . . . 
-        . . . . . c c c 4 c c c . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.Present), ground_next)
+    addObstacleOn(randomObstacle(), ground_next)
+    addObstacleOn(randomPresent(), ground_next)
+    addObstacleOn(randomPresent(), ground_next)
+    if (randint(0, 100) > 90) {
+        addObstacleOn(newPresent(10), ground_next)
+    }
     while (obstacles.length > 20) {
         obstacles.shift().destroy()
     }
@@ -1190,12 +1330,13 @@ controller.left.onEvent(ControllerButtonEvent.Repeated, function () {
 })
 let projectile: Sprite = null
 let _fps = 0
-let _ground: Sprite = null
 let _jump = 0
+let _ground: Sprite = null
 let _debug = false
 let _frame_time = 0
 let ground_lag = 0
 let ground_pressure = 0
+let _last_obstacle_x = 0
 let _y_prev = 0
 let _slope_time = 0
 let _ground_time = 0
@@ -1252,6 +1393,7 @@ score = 0
 _ground_time = 0
 _slope_time = 0
 _y_prev = 0
+_last_obstacle_x = 0
 ground_pressure = 0
 ground_lag = 10
 _frame_time = game.runtime()
